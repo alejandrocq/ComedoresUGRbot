@@ -4,7 +4,7 @@ import urllib
 import os
 import sys
 
-bot = telebot.TeleBot("195056032:AAEZxD9yunZkbusxM512B6oddGuawxATWVk")
+bot = telebot.TeleBot("bot_token_here")
 url = 'http://scu.ugr.es/'
 try:
     page = BeautifulSoup(urllib.request.urlopen(url), "html.parser")
