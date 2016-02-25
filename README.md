@@ -1,6 +1,6 @@
 # ComedoresUGRbot
 Telegram bot to check the menu of Universidad de Granada dining hall. It works
-thanks to <a href="https://github.com/eternnoir/pyTelegramBotAPI/blob/master/README.md">pyTelegramBotAPI</a>. Licensed under GPLv3.
+thanks to <a href="https://github.com/eternnoir/pyTelegramBotAPI/">pyTelegramBotAPI</a>.
 
 This bot is available at: http://telegram.me/ComedoresUGRbot
 
@@ -17,3 +17,5 @@ Once you have installed all the requirements with pip, then add your bot token t
 > python3 ComedoresUGRbot.py
 
 All should work okay.
+
+This bot is licensed under GPLv3. See LICENSE file for more information.
