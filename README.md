@@ -1,5 +1,5 @@
 # ComedoresUGRbot
-Telegram bot for request the menu of Universidad de Granada canteen. It works
+Telegram bot for request the menu of Universidad de Granada dining hall. It works
 thanks to <a href="https://github.com/eternnoir/pyTelegramBotAPI/blob/master/README.md">pyTelegramBotAPI</a>. Licensed under GPLv3.
 
 This bot is available at: http://telegram.me/ComedoresUGRbot
