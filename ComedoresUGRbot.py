@@ -1,6 +1,6 @@
 # This code is written on Python 3, so make sure you are running that version.
 # The menu needs to be updated every week, so it's neccesary to restart it
-# manually or using cron on Linux, for example.
+# manually or use cron tasks on Linux, for example.
 
 # Import all the neccesary stuff. You need to install BeautifulSoup (python library) on your
 # machine, so visit http://www.crummy.com/software/BeautifulSoup/bs4/doc/ for
@@ -13,7 +13,7 @@ import os
 import sys
 
 # Initialize the bot with its token. Remember to replace bot_token_here with
-# your bot token. You need to talk to BotFather to get one.
+# your bot token. You need to talk to @BotFather to get one.
 
 bot = telebot.TeleBot("bot_token_here")
 
@@ -104,7 +104,7 @@ def print_menu(message):
 # returns it to the user chat.
 
 @bot.message_handler(commands=['pdf'])
-def print_menu(message):
+def send_pdf(message):
     try:
         url_pdf = 'http://scu.ugr.es/?theme=pdf'
         pdf_filename = 'menu_comedores.pdf'
@@ -120,7 +120,8 @@ def print_menu(message):
         bot.send_message(message.chat.id, error_message)
         os.remove(pdf_filename)
 
-# This function keeps the connection alive to the Telegram Bot API and does all
-# the neccesary operations to send data.
+# This function keeps the connection to the Telegram Bot API alive and does all
+# the neccesary operations to send the data. none_stop=True prevents the script
+# from crashing if API errors occur.
 
-bot.polling()
+bot.polling(none_stop=True)
