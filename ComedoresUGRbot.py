@@ -2,9 +2,7 @@
 # The menu needs to be updated every week, so it's neccesary to restart it
 # manually or use cron tasks on Linux, for example.
 
-# Import all the neccesary stuff. You need to install BeautifulSoup (python library) on your
-# machine, so visit http://www.crummy.com/software/BeautifulSoup/bs4/doc/ for
-# more information.
+# Import all the neccesary stuff.
 
 from bs4 import BeautifulSoup
 import telebot
