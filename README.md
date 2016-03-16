@@ -13,10 +13,6 @@ First of all, **you need Python 3 correctly installed on your machine.** Then, r
 
 **In some distributions, you have to use pip3 instead of pip** in order to install the packages for Python 3.
 
-**pyTelegramBotAPI is not included in requirements.txt**, because it has been uploaded to this repository. If you want to install it in your system anyway, run:
-
-> pip install pyTelegramBotAPI
-
 Once you have installed all the requirements with pip, then add your bot token to the file ComedoresUGRbot.py and run:
 
 > python3 ComedoresUGRbot.py
