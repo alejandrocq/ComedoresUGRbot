@@ -15,9 +15,25 @@ import sys
 
 bot = telebot.TeleBot("bot_token_here")
 
-# Download the data we need and save it to a list of strings.
-
+# URLs and filename that we need to work.
 url = 'http://scu.ugr.es/'
+url_pdf = 'http://scu.ugr.es/?theme=pdf'
+pdf_filename = 'menu_comedores.pdf'
+
+# Download the pdf and save it to a file.
+try:
+    f = open(pdf_filename,'wb')
+    f.write(urllib.request.urlopen(url_pdf).read())
+    f.close()
+except IOError as e:
+    os.remove(pdf_filename)
+    sys.exit(e)
+except urllib.error.HTTPError as e:
+    os.remove(pdf_filename)
+    error_message = "Error %s HTTP." % e.code
+    sys.exit(error_message)
+
+# Download the web page and save the table we need. Then we create a list of strings.
 try:
     page = BeautifulSoup(urllib.request.urlopen(url), "html.parser")
     data = page.find("table").find_all("td")
@@ -66,7 +82,7 @@ def welcome_message(message):
 # Handler for help command. It returns some help to the user.
 
 @bot.message_handler(commands=['help'])
-def welcome_message(message):
+def help_message(message):
     msg = 'Si deseas obtener el menú de un día concreto, usa /lunes, /martes... etc. Además, escribiendo /pdf puedes obtener el documento pdf con el menú semanal completo.'
     bot.send_message(message.chat.id, msg)
 
@@ -104,18 +120,11 @@ def print_menu(message):
 @bot.message_handler(commands=['pdf'])
 def send_pdf(message):
     try:
-        url_pdf = 'http://scu.ugr.es/?theme=pdf'
-        pdf_filename = 'menu_comedores.pdf'
-        f = open(pdf_filename,'wb')
-        f.write(urllib.request.urlopen(url_pdf).read())
-        f.close()
         doc = open(pdf_filename, 'rb')
         bot.send_document(message.chat.id, doc)
         doc.close()
-        os.remove(pdf_filename)
-    except urllib.error.HTTPError as e:
-        error_message = "Error %s. Prueba de nuevo en unos minutos." % e.code
-        bot.send_message(message.chat.id, error_message)
+    except IOError as e:
+        sys.exit(e)
         os.remove(pdf_filename)
 
 # This function keeps the connection to the Telegram Bot API alive and does all
