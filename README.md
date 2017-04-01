@@ -3,6 +3,8 @@ Telegram bot to check the menu of Universidad de Granada dining hall. It works
 thanks to <a href="https://github.com/eternnoir/pyTelegramBotAPI/">pyTelegramBotAPI</a>
 and <a href="http://www.crummy.com/software/BeautifulSoup/">BeautifulSoup</a>.
 
+**This bot is not working anymore because UGR has done several changes to scu.ugr.es website**. I made a request to them in order to get a simple JSON API for developers and they answered that they would consider it. For the moment, i'm not going to update this bot.
+
 This bot is available at: http://telegram.me/ComedoresUGRbot
 
 ## Installation:
