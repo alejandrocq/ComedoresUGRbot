@@ -1,9 +1,12 @@
 # ComedoresUGRbot
 Telegram bot to check the menu of Universidad de Granada dining hall. It works
-thanks to <a href="https://github.com/eternnoir/pyTelegramBotAPI/">pyTelegramBotAPI</a>
-and <a href="http://www.crummy.com/software/BeautifulSoup/">BeautifulSoup</a>.
+thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/).
 
-**This bot is not working anymore because UGR has done several changes to scu.ugr.es website**. I made a request to them in order to get a simple JSON API for developers and they answered that they would consider it. For the moment, i'm not going to update this bot.
+**Bot is working again**. I have applied a new strategy using CasperJS to render menu tables and save them as png images. This implementation can be maintained more easily, because scu.ugr.es DOM has been changing a lot and
+maintain a parser seems to be more problematic.
+
+I made a request to them in order to get a simple JSON API for developers and they answered that they would consider it, but for the moment it's necessary to
+parse scu.ugr.es DOM one way or another.
 
 This bot is available at: http://telegram.me/ComedoresUGRbot
 
@@ -15,11 +18,12 @@ First of all, **you need Python 3 correctly installed on your machine.** Then, r
 
 **In some distributions, you have to use pip3 instead of pip** in order to install the packages for Python 3.
 
-Once you have installed all the requirements with pip, then add your bot token to the file ComedoresUGRbot.py and run:
+Also, you need to install [PhantomJS](http://phantomjs.org/) and [CasperJS](http://casperjs.org/). See how to do that in your operating system looking at their documentation.
+
+Once you have installed all the requirements, then add your bot token as 'BOT_TOKEN' environment variable and run:
 
 > python3 ComedoresUGRbot.py
 
-All should work okay. **This bot has to be restarted manually every week**, once
-the menu is updated on http://scu.ugr.es.
+All should work okay. **Menu images are updated every hour**.
 
 Code licensed under GPLv3. See LICENSE file for more information.
