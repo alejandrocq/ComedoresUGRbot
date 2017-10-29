@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 import telebot
 import urllib
-import os
+import time
 import datetime
+
+import os
 import subprocess
 import threading
 import sys
+import signal
 import logging
 
 url_pdf = 'http://scu.ugr.es/?theme=pdf'
@@ -86,18 +89,47 @@ def download_pdf():
 		error_message = "Error %s HTTP." % e.code
 		sys.exit(error_message)
 
+RENDERER_TIMER = None
+
 # Call CasperJS every hour to generate menu images
+def start_renderer_timer():
+	try:
+		global RENDERER_TIMER
+		RENDERER_TIMER = threading.Timer(3600, render_images)
+		RENDERER_TIMER.start()
+	except Exception as e:
+		logging.error('Renderer thread error', e)
+
 def render_images():
-	threading.Timer(3600, render_images).start()
 	subprocess.check_call(['casperjs', 'renderer.js'])
 
 def main():
 	logging.basicConfig(level=logging.INFO,
-						format='%(asctime)s %(levelname)s %(message)s',
-						filename='comedores_ugr.log')
-	download_pdf()
+		format='%(asctime)s %(levelname)s %(message)s',
+		filename='comedores_ugr.log')
 	render_images()
-	bot.polling(none_stop=True)
+	start_renderer_timer()
+
+	download_pdf()
+
+	signal.signal(signal.SIGINT, signal_handler)
+
+	while True:
+		try:
+			logging.info('Starting bot polling...')
+			bot.polling(none_stop=True)
+		except Exception as e:
+			logging.error('Bot polling error', e)
+			time.sleep(15)
+
+def signal_handler(signal_number, frame):
+	print('Received signal ' + str(signal_number)
+		+ '. Trying to end tasks and exit...')
+	bot.stop_polling()
+	if (RENDERER_TIMER is not None):
+		RENDERER_TIMER.cancel()
+
+	sys.exit(0)
 
 if __name__ == "__main__":
 	main()
