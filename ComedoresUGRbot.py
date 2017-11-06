@@ -92,24 +92,22 @@ def download_pdf():
 RENDERER_TIMER = None
 
 # Call CasperJS every hour to generate menu images
-def start_renderer_timer():
+def render_images():
 	try:
 		global RENDERER_TIMER
 		RENDERER_TIMER = threading.Timer(3600, render_images)
 		RENDERER_TIMER.start()
+		subprocess.check_call(['casperjs', 'renderer.js'])
+		logging.info('Menu images have been rendered successfully')
 	except Exception as e:
-		logging.error('Renderer thread error', e)
-
-def render_images():
-	subprocess.check_call(['casperjs', 'renderer.js'])
+		logging.error('Renderer error', e)
 
 def main():
 	logging.basicConfig(level=logging.INFO,
 		format='%(asctime)s %(levelname)s %(message)s',
 		filename='comedores_ugr.log')
-	render_images()
-	start_renderer_timer()
 
+	render_images()
 	download_pdf()
 
 	signal.signal(signal.SIGINT, signal_handler)
