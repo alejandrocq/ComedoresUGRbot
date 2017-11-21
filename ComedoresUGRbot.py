@@ -1,18 +1,20 @@
 #!/usr/bin/python3
-import telebot
-import urllib
-import time
-import datetime
-
 import os
 import subprocess
 import threading
 import sys
 import signal
 import logging
+import telebot
+import urllib
+import time
+import locale
+from datetime import date, timedelta
+from unidecode import unidecode
 
-url_pdf = 'http://scu.ugr.es/?theme=pdf'
-pdf_filename = 'menu.pdf'
+PDF_FILENAME = 'menu.pdf'
+
+locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 # Set yout bot token as an environment variable
 bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
@@ -29,87 +31,72 @@ def help_message(message):
 	bot.send_message(message.chat.id, msg)
 	log_command(message)
 
-@bot.message_handler(commands=['lunes','martes','miercoles','jueves','viernes','sabado'])
+@bot.message_handler(commands=['lunes','martes','miercoles','jueves',
+	'viernes','sabado'])
 def print_menu(message):
-	chat_id = message.chat.id
-
-	if (message.text.startswith("/lunes")):
-		send_menu_image(chat_id, 'monday')
-	if (message.text.startswith("/martes")):
-		send_menu_image(chat_id, 'tuesday')
-	if (message.text.startswith("/miercoles")):
-		send_menu_image(chat_id, 'wednesday')
-	if (message.text.startswith("/jueves")):
-		send_menu_image(chat_id, 'thursday')
-	if (message.text.startswith("/viernes")):
-		send_menu_image(chat_id, 'friday')
-	if (message.text.startswith("/sabado")):
-		send_menu_image(chat_id, 'saturday')
-
+	send_menu_image(message.chat.id, message.text.replace("/", ""))
 	log_command(message)
 
 @bot.message_handler(commands=['hoy'])
 def print_menu_today(message):
-	chat_id = message.chat.id
-	week_day_str = datetime.date.today().strftime("%A").lower()
-	send_menu_image(chat_id, week_day_str)
+	week_day_str = unidecode(date.today().strftime("%A"))
+	send_menu_image(message.chat.id, week_day_str)
 	log_command(message)
 
 @bot.message_handler(commands=['pdf'])
 def send_pdf(message):
 	try:
-		doc = open(pdf_filename, 'rb')
+		doc = open(PDF_FILENAME, 'rb')
 		bot.send_document(message.chat.id, doc)
 		doc.close()
 		log_command(message)
 	except IOError as e:
-		logging.error('Exception while opening file: ' + pdf_filename, e)
+		logging.error('Exception while opening file: ' + PDF_FILENAME, e)
 
 def send_menu_image(chat_id, day_of_week):
 	try:
-		img = open('images/' + day_of_week + '.png', 'rb')
-		bot.send_photo(chat_id, img)
-		img.close()
+		target_files = [file for file in os.listdir('images/')
+			if unidecode(file).startswith(day_of_week.upper())]
+		for file in target_files:
+			img = open('images/' + file, 'rb')
+			bot.send_photo(chat_id, img)
+			img.close()
 	except IOError as e:
-		logging.error('Exception while opening file: ' + day_of_week + '.png')
+		logging.error('Exception trying to send menu images', e)
 
 def log_command(message):
-	logging.info('Received command ' + message.text + '. Data: ' + str(message))
+	logging.info('Received command ' + message.text)
 
-def download_pdf():
-	try:
-		f = open(pdf_filename,'wb')
-		f.write(urllib.request.urlopen(url_pdf).read())
-		f.close()
-	except IOError as e:
-		os.remove(pdf_filename)
-		sys.exit(e)
-	except urllib.error.HTTPError as e:
-		os.remove(pdf_filename)
-		error_message = "Error %s HTTP." % e.code
-		sys.exit(error_message)
-
-RENDERER_TIMER = None
+DATA_TIMER = None
 
 # Call CasperJS every hour to generate menu images
-def render_images():
+def data_timer():
 	try:
-		global RENDERER_TIMER
-		RENDERER_TIMER = threading.Timer(3600, render_images)
-		RENDERER_TIMER.start()
+		global DATA_TIMER
+		DATA_TIMER = threading.Timer(3600, data_timer)
+		DATA_TIMER.start()
+
 		subprocess.check_call(['casperjs', 'renderer.js'])
 		logging.info('Menu images have been rendered successfully')
+		download_pdf()
 	except Exception as e:
 		logging.error('Renderer error', e)
 
+def download_pdf():
+	try:
+		f = open(PDF_FILENAME,'wb')
+		f.write(urllib.request.urlopen('http://scu.ugr.es/?theme=pdf').read())
+		f.close()
+		logging.info(PDF_FILENAME + ' downloaded successfully')
+	except Exception as e:
+		os.remove(PDF_FILENAME)
+		logging.error("Can't download pdf file", e)
+
 def main():
 	logging.basicConfig(level=logging.INFO,
-		format='%(asctime)s %(levelname)s %(message)s',
-		filename='comedores_ugr.log')
+		format='%(asctime)s %(levelname)s %(message)s')
 
-	render_images()
-	download_pdf()
-
+	data_timer()
 	signal.signal(signal.SIGINT, signal_handler)
 
 	while True:
@@ -118,15 +105,14 @@ def main():
 			bot.polling(none_stop=True)
 		except Exception as e:
 			logging.error('Bot polling error', e)
+			bot.stop_polling()
 			time.sleep(15)
 
 def signal_handler(signal_number, frame):
 	print('Received signal ' + str(signal_number)
 		+ '. Trying to end tasks and exit...')
 	bot.stop_polling()
-	if (RENDERER_TIMER is not None):
-		RENDERER_TIMER.cancel()
-
+	DATA_TIMER.cancel()
 	sys.exit(0)
 
 if __name__ == "__main__":
