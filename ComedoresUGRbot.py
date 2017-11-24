@@ -102,11 +102,10 @@ def main():
 	while True:
 		try:
 			logging.info('Starting bot polling...')
-			bot.polling(none_stop=True)
-		except Exception as e:
-			logging.error('Bot polling error', e)
-			bot.stop_polling()
-			time.sleep(15)
+			bot.polling()
+		except Exception as err:
+			logging.error("Bot polling error: {0}".format(err))
+			time.sleep(30)
 
 def signal_handler(signal_number, frame):
 	print('Received signal ' + str(signal_number)
