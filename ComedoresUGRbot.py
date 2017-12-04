@@ -8,11 +8,15 @@ import logging
 import telebot
 import urllib
 import time
+import re
 import locale
 from datetime import date, timedelta
 from unidecode import unidecode
 
+IMAGES_PATH = 'images/'
 PDF_FILENAME = 'menu.pdf'
+
+DATA_TIMER = None
 
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
@@ -22,52 +26,55 @@ bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
 @bot.message_handler(commands=['start'])
 def welcome_message(message):
 	msg = "¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el menú semanal en pdf usando /pdf. Si necesitas ayuda, usa /help."
-	bot.send_message(message.chat.id, msg)
 	log_command(message)
+	bot.send_message(message.chat.id, msg)
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
 	msg = "Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf con el menú semanal completo."
-	bot.send_message(message.chat.id, msg)
 	log_command(message)
+	bot.send_message(message.chat.id, msg)
 
 @bot.message_handler(commands=['lunes','martes','miercoles','jueves',
 	'viernes','sabado'])
-def print_menu(message):
-	send_menu_image(message.chat.id, message.text.replace("/", ""))
+def send_menu(message):
+	# Parse command correctly (avoid content after @)
+	regex = re.compile('\/\w*')
+	command = regex.search(message.text).group(0)
+
 	log_command(message)
+	send_menu_image(message, command.replace("/", ""))
 
 @bot.message_handler(commands=['hoy'])
-def print_menu_today(message):
+def send_menu_today(message):
 	week_day_str = unidecode(date.today().strftime("%A"))
-	send_menu_image(message.chat.id, week_day_str)
 	log_command(message)
+	send_menu_image(message, week_day_str)
 
 @bot.message_handler(commands=['pdf'])
 def send_pdf(message):
+	log_command(message)
 	try:
 		doc = open(PDF_FILENAME, 'rb')
 		bot.send_document(message.chat.id, doc)
 		doc.close()
-		log_command(message)
 	except IOError as e:
 		logging.error('Exception while opening file: ' + PDF_FILENAME, e)
 
-def send_menu_image(chat_id, day_of_week):
+def send_menu_image(message, day_of_week):
 	try:
-		target_files = [file for file in os.listdir('images/')
-			if unidecode(file).startswith(day_of_week.upper())]
+		target_files = [file for file in os.listdir(IMAGES_PATH)
+			if file.startswith(day_of_week.upper())]
 		for file in target_files:
-			img = open('images/' + file, 'rb')
-			bot.send_photo(chat_id, img)
+			img = open(IMAGES_PATH + file, 'rb')
+			bot.send_photo(message.chat.id, img)
 			img.close()
+			logging.info(file + ' has been sent')
 	except IOError as e:
 		logging.error('Exception trying to send menu images', e)
 
 def log_command(message):
 	logging.info('Received command ' + message.text)
-
-DATA_TIMER = None
 
 # Call CasperJS every hour to generate menu images
 def data_timer():
@@ -76,7 +83,15 @@ def data_timer():
 		DATA_TIMER = threading.Timer(3600, data_timer)
 		DATA_TIMER.start()
 
+		for filename in os.listdir(IMAGES_PATH):
+			os.remove(IMAGES_PATH + filename)
+
 		subprocess.check_call(['casperjs', 'renderer.js'])
+
+		for filename in os.listdir(IMAGES_PATH):
+			os.rename(IMAGES_PATH + filename,
+				IMAGES_PATH + unidecode(filename).replace(" ", ""))
+
 		logging.info('Menu images have been rendered successfully')
 		download_pdf()
 	except Exception as e:
