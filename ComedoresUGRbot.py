@@ -41,15 +41,14 @@ def send_menu(message):
 	# Parse command correctly (avoid content after @)
 	regex = re.compile('\/\w*')
 	command = regex.search(message.text).group(0)
-
 	log_command(message)
 	send_menu_image(message, command.replace("/", ""))
 
 @bot.message_handler(commands=['hoy'])
 def send_menu_today(message):
-	week_day_str = unidecode(date.today().strftime("%A"))
+	week_day_str = '{today:%A},{today.day}'.format(today = date.today())
 	log_command(message)
-	send_menu_image(message, week_day_str)
+	send_menu_image(message, unidecode(week_day_str))
 
 @bot.message_handler(commands=['pdf'])
 def send_pdf(message):
@@ -64,12 +63,16 @@ def send_pdf(message):
 def send_menu_image(message, day_of_week):
 	try:
 		target_files = [file for file in os.listdir(IMAGES_PATH)
-			if file.startswith(day_of_week.upper())]
-		for file in target_files:
-			img = open(IMAGES_PATH + file, 'rb')
-			bot.send_photo(message.chat.id, img)
-			img.close()
-			logging.info(file + ' has been sent')
+			if file.startswith(day_of_week)]
+		if not target_files:
+			msg = "No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta http://scu.ugr.es para más información."
+			bot.send_message(message.chat.id, msg)
+		else:
+			for file in target_files:
+				img = open(IMAGES_PATH + file, 'rb')
+				bot.send_photo(message.chat.id, img)
+				img.close()
+				logging.info(file + ' has been sent')
 	except IOError as e:
 		logging.error('Exception trying to send menu images', e)
 
@@ -90,7 +93,7 @@ def data_timer():
 
 		for filename in os.listdir(IMAGES_PATH):
 			os.rename(IMAGES_PATH + filename,
-				IMAGES_PATH + unidecode(filename).replace(" ", ""))
+				(IMAGES_PATH + unidecode(filename).replace(" ", "")).lower())
 
 		logging.info('Menu images have been rendered successfully')
 		download_pdf()
