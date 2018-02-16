@@ -1,40 +1,44 @@
-var casper = require('casper').create({
-  verbose: false,
-  logLevel: 'info'
-});
+var casper = require('casper').create({verbose: false, logLevel: 'info'});
 
 casper.start('http://scu.ugr.es', function() {
   casper.log('Loading web page: ' + this.getCurrentUrl(), 'info');
 });
 
-casper.on("page.error", function(msg, trace) {
-  casper.log(msg, 'error');
-});
-
 casper.then(function() {
   this.waitForSelector('.inline', function() {
     var data = this.evaluate(function() {
+      var days = [
+        'LUNES',
+        'MARTES',
+        'MIÉRCOLES',
+        'JUEVES',
+        'VIERNES',
+        'SÁBADO'
+      ];
+
       var result = [];
       var tables = document.querySelectorAll('table.inline');
 
-      // Find first table to render (monday menu)
+      var currentDate = new Date();
+      var dayOfWeek = currentDate.getDay() - 1;
+      var today = days[dayOfWeek] + ',' + currentDate.getDate();
+
+      // Find first table to render (today menu)
       var startIndex = 0;
       for (var i = 0; i < tables.length; i++) {
         var td = tables[i].querySelector("tbody > tr > td.leftalign");
-        var date = td == null ? "" : td.textContent;
+        var date = td === undefined ? null : td.textContent.replace(/\s/g, "");
 
-        if (date.indexOf('LUNES') !== -1) {
-          startIndex = i; break;
+        if (date !== null && date.indexOf(today) > -1) {
+          startIndex = i;
+          break;
         }
       }
 
-      for (var i = startIndex; i < startIndex + 6; i++) {
+      for (var i = startIndex; i < days.length - dayOfWeek + startIndex; i++) {
         var td = tables[i].querySelector("tbody > tr > td.leftalign");
         var date = td == null ? "" : td.textContent;
-        result.push({
-          rect: tables[i].getBoundingClientRect(),
-          date: date
-        });
+        result.push({rect: tables[i].getBoundingClientRect(), date: date});
       }
 
       return result;
