@@ -16,7 +16,7 @@ from unidecode import unidecode
 IMAGES_PATH = 'images/'
 PDF_FILENAME = 'menu.pdf'
 
-DATA_TIMER = None
+timer = None
 
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
@@ -86,19 +86,21 @@ def send_menu_image(message, day_of_week):
 def log_command(message):
     log.info('Received command ' + message.text)
 
-# Call CasperJS every hour to generate menu images
-
 
 def data_timer():
+    """Call CasperJS every hour to generate menu images"""
     try:
-        global DATA_TIMER
-        DATA_TIMER = threading.Timer(3600, data_timer)
-        DATA_TIMER.start()
+        global timer
+        timer = threading.Timer(3600, timer)
+        timer.start()
+
+        if not os.path.exists(IMAGES_PATH):
+            os.makedirs(IMAGES_PATH)
 
         for filename in os.listdir(IMAGES_PATH):
             os.remove(IMAGES_PATH + filename)
 
-        subprocess.check_call(['casperjs', 'renderer.js'])
+        subprocess.check_call(['node', 'renderer.js'])
 
         for filename in os.listdir(IMAGES_PATH):
             os.rename(IMAGES_PATH + filename,
@@ -134,7 +136,7 @@ def main():
             log.info('Starting bot polling...')
             bot.polling()
         except Exception as err:
-            log.error("Bot polling error: {0}".format(err))
+            log.error("Bot polling error: {0}".format(err.args))
             time.sleep(30)
 
 
@@ -142,7 +144,7 @@ def signal_handler(signal_number, frame):
     print('Received signal ' + str(signal_number)
           + '. Trying to end tasks and exit...')
     bot.stop_polling()
-    DATA_TIMER.cancel()
+    data_timer.cancel()
     sys.exit(0)
 
 

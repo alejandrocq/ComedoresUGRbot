@@ -1,0 +1,30 @@
+{
+  "name": "comedoresugrbot",
+  "version": "0.1.0",
+  "description": "Telegram bot to check the menu of Universidad de Granada dining hall.",
+  "main": "renderer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alejandrocq/ComedoresUGRbot.git"
+  },
+  "author": "Alejandro Castilla Quesada",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alejandrocq/ComedoresUGRbot/issues"
+  },
+  "homepage": "https://github.com/alejandrocq/ComedoresUGRbot#readme",
+  "dependencies": {
+    "npm": "^5.7.1",
+    "puppeteer": "^1.1.1"
+  },
+  "devDependencies": {
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1"
+  }
+}

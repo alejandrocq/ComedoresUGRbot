@@ -1,64 +1,99 @@
-var casper = require('casper').create({verbose: false, logLevel: 'info'});
+const puppeteer = require('puppeteer')
 
-casper.start('http://scu.ugr.es', function() {
-  casper.log('Loading web page: ' + this.getCurrentUrl(), 'info');
-});
+const BROWSER_PATH = process.env.BROWSER_PATH;
 
-casper.then(function() {
-  this.waitForSelector('.inline', function() {
-    var data = this.evaluate(function() {
-      var days = [
-        'LUNES',
-        'MARTES',
-        'MIÉRCOLES',
-        'JUEVES',
-        'VIERNES',
-        'SÁBADO'
-      ];
+(async () => {
+  const browser = await puppeteer.launch({
+    executablePath: BROWSER_PATH
+  })
 
-      var result = [];
-      var tables = document.querySelectorAll('table.inline');
+  const page = await browser.newPage()
+  page.setViewport({width: 1920, height: 1080, deviceScaleFactor: 2})
 
-      var currentDate = new Date();
-      var dayOfWeek = currentDate.getDay() - 1;
-      var today = days[dayOfWeek] + ',' + currentDate.getDate();
+  await page.goto('http://scu.ugr.es')
+  await page.waitForSelector('.inline')
 
-      // Find first table to render (today menu)
-      var startIndex = 0;
-      for (var i = 0; i < tables.length; i++) {
-        var td = tables[i].querySelector("tbody > tr > td.leftalign");
-        var date = td === undefined ? null : td.textContent.replace(/\s/g, "");
+  let data = await page.evaluate(() => {
+    let days = [
+      'LUNES',
+      'MARTES',
+      'MIÉRCOLES',
+      'JUEVES',
+      'VIERNES',
+      'SÁBADO'
+    ]
 
-        if (date !== null && date.indexOf(today) > -1) {
-          startIndex = i;
-          break;
-        }
+    let result = []
+    let container = document.querySelectorAll('div.level2')[0]
+    let tables = container.querySelectorAll('table.inline')
+
+    let currentDate = new Date()
+
+    // monday (0) - sunday (6)
+    let dayOfWeek = currentDate.getDay() - 1
+    let today = days[dayOfWeek] + ',' + currentDate.getDate()
+
+    // Find first table to render (today menu)
+    let startIndex = -1
+    for (let i = 0; i < tables.length; i++) {
+      let td = tables[i].querySelector('tbody > tr > td.leftalign')
+      let date = td === null
+        ? null
+        : td.textContent.replace(/\s/g, '')
+
+      if (date !== null && date.includes(today)) {
+        startIndex = i
+        break
       }
-
-      for (var i = startIndex; i < days.length - dayOfWeek + startIndex; i++) {
-        var td = tables[i].querySelector("tbody > tr > td.leftalign");
-        var date = td == null ? "" : td.textContent;
-        result.push({rect: tables[i].getBoundingClientRect(), date: date});
-      }
-
-      return result;
-    });
-
-    // Render only tables with menu of each day
-    for (var i = 0; i < data.length; i++) {
-      var tableRect = data[i].rect;
-      var tableDate = data[i].date;
-      if (tableDate === "") continue;
-      this.capture('images/' + tableDate + '.png', {
-        top: tableRect.top,
-        left: tableRect.left,
-        width: tableRect.width,
-        height: tableRect.height
-      });
     }
 
-    casper.log('Images rendered successfully', 'info');
-  });
-});
+    // Today menu not found, so return an empty array
+    if (startIndex === -1) {
+      return result
+    }
 
-casper.run();
+    let daysToRender = days.length - dayOfWeek
+    let endIndex = daysToRender > tables.length
+      ? tables.length
+      : daysToRender + startIndex
+
+    for (let i = startIndex; i < endIndex; i++) {
+      let td = tables[i].querySelector('tbody > tr > td.leftalign')
+      let date = td === null
+        ? null
+        : td.textContent.replace(/\s/g, '')
+
+      const {x, y, width, height} = tables[i].getBoundingClientRect()
+      result.push({rect: {
+        left: x,
+        top: y,
+        width,
+        height
+      },
+      date: date})
+    }
+
+    return result
+  })
+
+  // Render only tables with menu of each day
+  for (let i = 0; i < data.length; i++) {
+    let tableRect = data[i].rect
+    let tableDate = data[i].date
+    if (tableDate === null) continue
+
+    let imagePath = 'images/' + tableDate + '.png'
+    await page.screenshot({
+      path: imagePath,
+      clip: {
+        x: tableRect.left,
+        y: tableRect.top,
+        width: tableRect.width,
+        height: tableRect.height
+      }
+    })
+    console.log('INFO Image ' + imagePath + ' rendered successfully')
+  }
+
+  await browser.close()
+})()
