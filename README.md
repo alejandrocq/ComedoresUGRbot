@@ -1,26 +1,28 @@
 # ComedoresUGRbot
+**Telegram link**: http://telegram.me/ComedoresUGRbot
+
 Telegram bot to check the menu of Universidad de Granada dining hall. It works
-thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/).
+thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/) and [puppeteer](https://github.com/GoogleChrome/puppeteer/).
 
-**Bot is working again**. I have applied a new strategy using CasperJS to render menu tables and save them as png images. This implementation can be maintained more easily, because scu.ugr.es DOM has been changing a lot and
-maintain a parser seems to be more problematic.
+**Puppeteer is used to launch a headless Chrome browser, find menu tables and save them as png images.** This implementation can be maintained more easily, because scu.ugr.es DOM has been changing a lot and parse the data in the tables seems to be more problematic. I made a request to them in order to get a simple JSON API for developers and they answered that they would consider it, but for the moment it's necessary to parse scu.ugr.es DOM one way or another.
 
-I made a request to them in order to get a simple JSON API for developers and they answered that they would consider it, but for the moment it's necessary to
-parse scu.ugr.es DOM one way or another.
+## Installation
 
-This bot is available at: http://telegram.me/ComedoresUGRbot
-
-## Installation:
-
-First of all, **you need Python 3 correctly installed on your machine.** Then, run:
+First of all, **you need Python 3 correctly installed on your machine**. Then, run:
 
 > pip install -r requirements.txt
 
-**In some distributions, you have to use pip3 instead of pip** in order to install the packages for Python 3.
+**In some environments, you have to use pip3 instead of pip** in order to install the packages for Python 3.
 
-Also, you need to install [PhantomJS](http://phantomjs.org/) and [CasperJS](http://casperjs.org/). See how to do that in your operating system looking at their documentation.
+Also, you need to **install all the necessary node dependencies to run the renderer**. To do that, run:
 
-Once you have installed all the requirements, then add your bot token as 'BOT_TOKEN' environment variable and run:
+> npm install
+
+In order to test the renderer, run the following command and be sure that all menu tables are being saved in ./images folder:
+
+> node renderer.js
+
+Once you have installed all the dependencies, add your bot token as 'BOT_TOKEN' environment variable and run:
 
 > python3 ComedoresUGRbot.py
 
