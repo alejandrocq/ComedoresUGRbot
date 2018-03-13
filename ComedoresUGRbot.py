@@ -14,6 +14,7 @@ from datetime import date
 from unidecode import unidecode
 
 IMAGES_PATH = 'images/'
+NEW_IMAGES_PATH = 'images-new/'
 PDF_FILENAME = 'menu.pdf'
 
 timer = None
@@ -73,6 +74,7 @@ def send_menu_image(message, day_of_week):
         if not target_files:
             msg = "No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta http://scu.ugr.es para más información."
             bot.send_message(message.chat.id, msg)
+            log.info('No data available for requested day')
         else:
             for file in target_files:
                 img = open(IMAGES_PATH + file, 'rb')
@@ -88,28 +90,35 @@ def log_command(message):
 
 
 def data_timer():
-    """Call CasperJS every hour to generate menu images"""
+    """Call puppeteer every hour to generate menu images"""
     try:
         global timer
-        timer = threading.Timer(3600, timer)
+        timer = threading.Timer(3600, data_timer)
         timer.start()
 
         if not os.path.exists(IMAGES_PATH):
             os.makedirs(IMAGES_PATH)
 
-        for filename in os.listdir(IMAGES_PATH):
-            os.remove(IMAGES_PATH + filename)
+        if not os.path.exists(NEW_IMAGES_PATH):
+            os.makedirs(NEW_IMAGES_PATH)
 
-        subprocess.check_call(['node', 'renderer.js'])
+        for filename in os.listdir(NEW_IMAGES_PATH):
+            os.remove(NEW_IMAGES_PATH + filename)
 
-        for filename in os.listdir(IMAGES_PATH):
-            os.rename(IMAGES_PATH + filename,
-                      (IMAGES_PATH + unidecode(filename)).lower())
+        subprocess.run(['node', 'renderer.js'], timeout=60)
+
+        # Remove old images only if new images are available
+        if os.listdir(NEW_IMAGES_PATH):
+            for filename in os.listdir(IMAGES_PATH):
+                os.remove(IMAGES_PATH + filename)
+            for filename in os.listdir(NEW_IMAGES_PATH):
+                os.rename(NEW_IMAGES_PATH + filename,
+                          (IMAGES_PATH + unidecode(filename)).lower())
 
         log.info('Menu images have been rendered successfully')
         download_pdf()
-    except Exception as e:
-        log.error('Renderer error', e)
+    except Exception as err:
+        log.error('Renderer error: {0}'.format(err.args))
 
 
 def download_pdf():
@@ -119,9 +128,9 @@ def download_pdf():
                 .read())
         f.close()
         log.info(PDF_FILENAME + ' downloaded successfully')
-    except Exception as e:
+    except Exception as err:
         os.remove(PDF_FILENAME)
-        log.error("Can't download pdf file", e)
+        log.error("Can't download pdf file: {0}".format(err.args))
 
 
 def main():
