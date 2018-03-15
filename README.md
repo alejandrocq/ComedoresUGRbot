@@ -1,5 +1,7 @@
 # ComedoresUGRbot
-**Telegram link**: http://telegram.me/ComedoresUGRbot
+<img src="ugrlogo.png" width="256px" align="right"/>
+
+<img src="telegramlogo.png" width="16px"/> http://telegram.me/ComedoresUGRbot
 
 Telegram bot to check the menu of Universidad de Granada dining hall. It works
 thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/) and [puppeteer](https://github.com/GoogleChrome/puppeteer/).
@@ -18,11 +20,13 @@ Also, you need to **install all the necessary node dependencies to run the rende
 
 > npm install
 
-In order to test the renderer, run the following command and be sure that all menu tables are being saved in ./images folder:
+In order to test the renderer, run the following command and be sure that all menu tables are being saved in `./images-new` folder:
 
 > node renderer.js
 
-Once you have installed all the dependencies, add your bot token as 'BOT_TOKEN' environment variable and run:
+Once you have installed all the dependencies, add your bot token in `BOT_TOKEN` environment variable. Optionally, you can configure a custom chromium browser path in `BROWSER_PATH` environment variable if you don't want to use the chromium browser bundled with puppeteer npm package.
+
+When everything is properly configured, run the bot script:
 
 > python3 ComedoresUGRbot.py
 
