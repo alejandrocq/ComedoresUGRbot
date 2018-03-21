@@ -113,7 +113,7 @@ def data_timer():
                 os.remove(IMAGES_PATH + filename)
             for filename in os.listdir(NEW_IMAGES_PATH):
                 os.rename(NEW_IMAGES_PATH + filename,
-                          (IMAGES_PATH + unidecode(filename)).lower())
+                          IMAGES_PATH + unidecode(filename))
 
         log.info('Menu images have been rendered successfully')
         download_pdf()
