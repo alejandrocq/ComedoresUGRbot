@@ -17,11 +17,11 @@ IMAGES_PATH = 'images/'
 NEW_IMAGES_PATH = 'images-new/'
 PDF_FILENAME = 'menu.pdf'
 
-timer = None
+data_timer = None
 
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
-# Set yout bot token as an environment variable
+# Get bot token from environment variable BOT_TOKEN
 bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
 
 
@@ -89,13 +89,9 @@ def log_command(message):
     log.info('Received command ' + message.text)
 
 
-def data_timer():
+def load_data():
     """Call puppeteer every hour to generate menu images"""
     try:
-        global timer
-        timer = threading.Timer(3600, data_timer)
-        timer.start()
-
         if not os.path.exists(IMAGES_PATH):
             os.makedirs(IMAGES_PATH)
 
@@ -116,12 +112,10 @@ def data_timer():
                           IMAGES_PATH + unidecode(filename))
 
         log.info('Menu images have been rendered successfully')
-        download_pdf()
     except Exception as err:
         log.error('Renderer error: {0}'.format(err.args))
 
-
-def download_pdf():
+    # Download menu pdf
     try:
         f = open(PDF_FILENAME, 'wb')
         f.write(urllib.request.urlopen('http://scu.ugr.es/?theme=pdf')
@@ -132,12 +126,17 @@ def download_pdf():
         os.remove(PDF_FILENAME)
         log.error("Can't download pdf file: {0}".format(err.args))
 
+    global data_timer
+    data_timer = threading.Timer(3600, load_data)
+    data_timer.start()
+
 
 def main():
     log.basicConfig(level=log.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
-    data_timer()
+    load_data()
+
     signal.signal(signal.SIGINT, signal_handler)
 
     while True:

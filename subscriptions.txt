@@ -1,0 +1,1 @@
+{'chat_id': 5823880, 'today_menu_sent': False}
