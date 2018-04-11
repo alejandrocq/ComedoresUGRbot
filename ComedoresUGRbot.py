@@ -10,7 +10,7 @@ import urllib
 import time
 import re
 import locale
-from datetime import date
+from datetime import datetime, date, timedelta
 from unidecode import unidecode
 
 IMAGES_PATH = 'images/'
@@ -18,6 +18,8 @@ NEW_IMAGES_PATH = 'images-new/'
 PDF_FILENAME = 'menu.pdf'
 
 data_timer = None
+sub_timer = None
+subscriptions = []
 
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
@@ -27,14 +29,14 @@ bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
 
 @bot.message_handler(commands=['start'])
 def welcome_message(message):
-    msg = "¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el menú semanal en pdf usando /pdf. Si necesitas ayuda, usa /help."
+    msg = "¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el menú semanal en pdf usando /pdf o suscribirte al menú diario usando /suscripcion . Si necesitas ayuda, usa /help."
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    msg = "Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf con el menú semanal completo."
+    msg = "Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf con el menú semanal completo o suscribirte al menú diario usando /suscripcion"
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
@@ -46,14 +48,19 @@ def send_menu(message):
     regex = re.compile('\/\w*')
     command = regex.search(message.text).group(0)
     log_command(message)
-    send_menu_image(message, command.replace("/", ""))
+    send_menu_image(message.chat.id, command.replace("/", ""))
 
 
 @bot.message_handler(commands=['hoy'])
 def send_menu_today(message):
-    week_day_str = '{today:%A},{today.day}'.format(today=date.today())
     log_command(message)
-    send_menu_image(message, unidecode(week_day_str))
+
+    suggest_subscription_msg = '*NOVEDAD*: Ahora puedes suscribirte y *recibir el menú diario automáticamente*. Para ello, utiliza el comando /suscripcion'
+    bot.send_message(message.chat.id, suggest_subscription_msg,
+                     parse_mode='markdown')
+
+    week_day_str = '{today:%A},{today.day}'.format(today=date.today())
+    send_menu_image(message.chat.id, unidecode(week_day_str))
 
 
 @bot.message_handler(commands=['pdf'])
@@ -67,18 +74,43 @@ def send_pdf(message):
         log.error('Exception while opening file: ' + PDF_FILENAME, e)
 
 
-def send_menu_image(message, day_of_week):
+@bot.message_handler(commands=['suscripcion'])
+def subscribe(message):
+    log_command(message)
+
+    for sub in subscriptions:
+        if sub == message.chat.id:
+            msg = 'Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
+            bot.send_message(message.chat.id, msg, parse_mode='markdown')
+            return
+
+    subscriptions.append(message.chat.id)
+    persist_subscriptions()
+    msg = '¡Suscrito con éxito!. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
+    bot.send_message(message.chat.id, msg, parse_mode='markdown')
+
+
+@bot.message_handler(commands=['cancelarsuscripcion'])
+def unsubscribe(message):
+    log_command(message)
+    subscriptions.remove(message.chat.id)
+    persist_subscriptions()
+    msg = '¡Suscripción cancelada!. Puedes volver a suscribirte en cualquier momento usando el comando /suscripcion'
+    bot.send_message(message.chat.id, msg)
+
+
+def send_menu_image(chat_id, day_of_week):
     try:
         target_files = [file for file in os.listdir(IMAGES_PATH)
                         if file.startswith(day_of_week)]
         if not target_files:
             msg = "No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta http://scu.ugr.es para más información."
-            bot.send_message(message.chat.id, msg)
+            bot.send_message(chat_id, msg)
             log.info('No data available for requested day')
         else:
             for file in target_files:
                 img = open(IMAGES_PATH + file, 'rb')
-                bot.send_photo(message.chat.id, img)
+                bot.send_photo(chat_id, img)
                 img.close()
                 log.info(file + ' has been sent')
     except IOError as e:
@@ -86,7 +118,8 @@ def send_menu_image(message, day_of_week):
 
 
 def log_command(message):
-    log.info('Received command ' + message.text)
+    log.info('Received command ' + message.text +
+             '. Chat data: ' + str(message.chat))
 
 
 def load_data():
@@ -131,11 +164,56 @@ def load_data():
     data_timer.start()
 
 
+def load_subscriptions():
+    global subscriptions
+    if os.path.exists('subscriptions.txt'):
+        for sub in open('subscriptions.txt', 'r').readlines():
+            subscriptions.append(int(sub.replace('\n', '')))
+
+
+def persist_subscriptions():
+    file = open('subscriptions.txt', 'w')
+    for sub in subscriptions:
+        file.write(str(sub) + '\n')
+    file.close()
+
+
+def schedule_subscription_processing():
+    """Send menu every day at 12:00 (local date)"""
+    global sub_timer
+
+    now = datetime.now()
+    delta = None
+
+    if now.hour < 12:
+        that = now.replace(hour=12, minute=0)
+        delta = that.timestamp() - now.timestamp()
+        log.info('DELTA: ' + str(delta))
+    elif now.hour >= 12:
+        that = now + timedelta(days=1)
+        that = that.replace(hour=12, minute=0)
+        delta = that.timestamp() - now.timestamp()
+        log.info('DELTA: ' + str(delta))
+
+    sub_timer = threading.Timer(delta, process_subscriptions)
+    sub_timer.start()
+
+
+def process_subscriptions():
+    for sub in subscriptions:
+        week_day_str = '{today:%A},{today.day}'.format(today=date.today())
+        send_menu_image(sub, unidecode(week_day_str))
+
+    schedule_subscription_processing()
+
+
 def main():
     log.basicConfig(level=log.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
     load_data()
+    load_subscriptions()
+    schedule_subscription_processing()
 
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -145,6 +223,7 @@ def main():
             bot.polling()
         except Exception as err:
             log.error("Bot polling error: {0}".format(err.args))
+            bot.stop_polling()
             time.sleep(30)
 
 
@@ -153,6 +232,7 @@ def signal_handler(signal_number, frame):
           + '. Trying to end tasks and exit...')
     bot.stop_polling()
     data_timer.cancel()
+    sub_timer.cancel()
     sys.exit(0)
 
 

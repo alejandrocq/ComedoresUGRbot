@@ -2,6 +2,7 @@ images/
 images-new/
 node_modules/
 package-lock.json
+*.txt
 *.pdf
 *.log
 *.sh
