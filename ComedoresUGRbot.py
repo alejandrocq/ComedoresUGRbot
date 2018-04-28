@@ -113,8 +113,9 @@ def send_menu_image(chat_id, day_of_week):
                 bot.send_photo(chat_id, img)
                 img.close()
                 log.info(file + ' has been sent')
-    except IOError as e:
-        log.error('Exception trying to send menu images', e)
+    except Exception as e:
+        log.error('Exception trying to send menu images to chat id '
+                  .format(chat_id), e)
 
 
 def log_command(message):
@@ -124,6 +125,10 @@ def log_command(message):
 
 def load_data():
     """Call puppeteer every hour to generate menu images"""
+    global data_timer
+    data_timer = threading.Timer(3600, load_data)
+    data_timer.start()
+
     try:
         if not os.path.exists(IMAGES_PATH):
             os.makedirs(IMAGES_PATH)
@@ -159,15 +164,12 @@ def load_data():
         os.remove(PDF_FILENAME)
         log.error("Can't download pdf file: {0}".format(err.args))
 
-    global data_timer
-    data_timer = threading.Timer(3600, load_data)
-    data_timer.start()
-
 
 def load_subscriptions():
     global subscriptions
     if os.path.exists('subscriptions.txt'):
-        for sub in open('subscriptions.txt', 'r').readlines():
+        file = open('subscriptions.txt', 'r')
+        for sub in file.readlines():
             subscriptions.append(int(sub.replace('\n', '')))
 
 
@@ -178,33 +180,33 @@ def persist_subscriptions():
     file.close()
 
 
+def process_subscriptions():
+    for sub in subscriptions:
+        week_day_str = '{today:%A},{today.day}'.format(today=date.today())
+        send_menu_image(sub, unidecode(week_day_str))
+    schedule_subscription_processing()
+
+
 def schedule_subscription_processing():
     """Send menu every day at 12:00 (local date)"""
     global sub_timer
 
     now = datetime.now()
-    delta = None
 
     if now.hour < 12:
-        that = now.replace(hour=12, minute=0)
-        delta = that.timestamp() - now.timestamp()
-        log.info('DELTA: ' + str(delta))
+        next = now.replace(hour=12, minute=0)
     elif now.hour >= 12:
-        that = now + timedelta(days=1)
-        that = that.replace(hour=12, minute=0)
-        delta = that.timestamp() - now.timestamp()
-        log.info('DELTA: ' + str(delta))
+        next = now + timedelta(days=1)
+        next = next.replace(hour=12, minute=0)
 
+    if next.weekday() == 6:
+        # Dining hall closed on sundays, so schedule to next monday
+        next = next + timedelta(days=1)
+
+    delta = next.timestamp() - now.timestamp()
+    log.info('Subscriptions processing delta: ' + str(delta / 3600) + ' hours')
     sub_timer = threading.Timer(delta, process_subscriptions)
     sub_timer.start()
-
-
-def process_subscriptions():
-    for sub in subscriptions:
-        week_day_str = '{today:%A},{today.day}'.format(today=date.today())
-        send_menu_image(sub, unidecode(week_day_str))
-
-    schedule_subscription_processing()
 
 
 def main():
