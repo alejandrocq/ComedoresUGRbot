@@ -3,6 +3,7 @@ images-new/
 node_modules/
 package-lock.json
 *.txt
+*.bak
 *.pdf
 *.log
 *.sh

@@ -78,14 +78,14 @@ def send_pdf(message):
 def subscribe(message):
     log_command(message)
 
-    for sub in subscriptions:
-        if sub == message.chat.id:
-            msg = 'Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
-            bot.send_message(message.chat.id, msg, parse_mode='markdown')
-            return
+    if message.chat.id in subscriptions:
+        msg = 'Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
+        bot.send_message(message.chat.id, msg, parse_mode='markdown')
+        return
 
     subscriptions.append(message.chat.id)
     persist_subscriptions()
+
     msg = '¡Suscrito con éxito!. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
     bot.send_message(message.chat.id, msg, parse_mode='markdown')
 
@@ -93,8 +93,11 @@ def subscribe(message):
 @bot.message_handler(commands=['cancelarsuscripcion'])
 def unsubscribe(message):
     log_command(message)
-    subscriptions.remove(message.chat.id)
-    persist_subscriptions()
+
+    if message.chat.id in subscriptions:
+        subscriptions.remove(message.chat.id)
+        persist_subscriptions()
+
     msg = '¡Suscripción cancelada!. Puedes volver a suscribirte en cualquier momento usando el comando /suscripcion'
     bot.send_message(message.chat.id, msg)
 
