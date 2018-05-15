@@ -5,10 +5,10 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
 (async () => {
   let browser = null
   try {
-    browser = await puppeteer.launch({executablePath: BROWSER_PATH})
+    browser = await puppeteer.launch({ executablePath: BROWSER_PATH })
 
     const page = await browser.newPage()
-    page.setViewport({width: 1920, height: 1080, deviceScaleFactor: 1})
+    page.setViewport({ width: 1920, height: 1080 })
 
     await page.goto('http://scu.ugr.es')
     await page.waitForSelector('.inline')
@@ -18,20 +18,13 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
         return date.replace(/\s/g, '').toLowerCase()
       }
 
-      const findTodayTableIndex = (tables, today) => {
-        let index = -1
-        for (let i = 0; i < tables.length; i++) {
-          let td = tables[i].querySelector('tbody > tr > td.leftalign')
-          let date = td === null
-            ? null
-            : sanitizeDate(td.textContent)
-
-          if (date !== null && date.includes(today)) {
-            index = i
-            break
-          }
+      const includesToday = (trs, today) => {
+        for (let i = 0; i < trs.length; i++) {
+          let td = trs[i].querySelector('td.leftalign')
+          let date = td === null ? null : sanitizeDate(td.textContent)
+          if (date !== null && date.includes(today)) return true
         }
-        return index
+        return false
       }
 
       let days = [
@@ -44,7 +37,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
         'sábado'
       ]
 
-      let result = []
+      let tables = []
 
       let currentDate = new Date()
 
@@ -58,52 +51,63 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       let today = days[dayOfWeek] + ',' + dayOfMonth
 
       let containers = document.querySelectorAll('div.content_doku > div')
-
-      let startIndex = -1
-      let tables = null
-
+      let container = null
       for (let i = 0; i < containers.length; i++) {
-        tables = containers[i].querySelectorAll('table.inline')
-        startIndex = findTodayTableIndex(tables, today)
-        if (startIndex !== -1) {
+        let trs = containers[i].querySelectorAll('tr')
+        if (includesToday(trs, today)) {
+          container = containers[i]
           break
         }
       }
 
-      // Today menu not found, so return an empty array
-      if (startIndex === -1) {
-        return result
+      // If today not found in any container, just return
+      if (container === null) return tables
+
+      let trs = container.querySelectorAll('tr')
+      let dateIdxs = []
+      for (let i = 0; i < trs.length; i++) {
+        let td = trs[i].querySelector('td.leftalign')
+        let date = td === null ? null : sanitizeDate(td.textContent)
+        if (date !== null && days.includes(date.substring(0, date.indexOf(',')))) {
+          dateIdxs.push(i)
+        }
       }
 
-      let daysToRender = days.length - dayOfWeek
-      let endIndex = daysToRender + startIndex > tables.length
-        ? tables.length
-        : daysToRender + startIndex
+      var out = []
+      for (let i = 0; i < dateIdxs.length; i++) {
+        let dateIdx = dateIdxs[i]
+        let date = sanitizeDate(trs[dateIdx].querySelector('td.leftalign').textContent)
+        let outTable = document.createElement('table')
+        let outTableBody = document.createElement('tbody')
+        outTable.append(outTableBody)
 
-      for (let i = startIndex; i < endIndex; i++) {
-        let td = tables[i].querySelector('tbody > tr > td.leftalign')
-        let date = td === null
-          ? null
-          : sanitizeDate(td.textContent)
-
-        // Discard if date string does not include an actual day
-        if (date === null || !days.includes(date.substring(0, date.indexOf(',')))) {
-          continue
+        let endIndex = i === dateIdxs.length - 1 ? trs.length : dateIdxs[i + 1]
+        for (let j = dateIdx; j < endIndex; j++) {
+          outTableBody.append(trs[j])
         }
 
-        const {x, y, width, height} = tables[i].getBoundingClientRect()
-        result.push({
+        out.push({ table: outTable, date: date })
+      }
+
+      // Add all tables to DOM before getting their client rect
+      for (let i = 0; i < out.length; i++) {
+        container.appendChild(out[i].table)
+      }
+
+      for (let i = 0; i < out.length; i++) {
+        const { x, y, width, height } = out[i].table.getBoundingClientRect()
+        tables.push({
           rect: {
             left: x,
             top: y,
             width,
             height
           },
-          date: date
+          date: out[i].date
         })
       }
 
-      return result
+      return tables
     })
 
     console.log('INFO Rendering ' + data.length + ' images')
@@ -114,9 +118,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       let tableRect = data[i].rect
       let tableDate = data[i].date
 
-      if (tableDate === null) {
-        continue
-      }
+      if (tableDate === null) continue
 
       let imagePath = 'images-new/' + tableDate + '.png'
       screenshots.push(page.screenshot({
