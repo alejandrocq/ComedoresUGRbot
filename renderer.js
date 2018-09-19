@@ -5,10 +5,10 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
 (async () => {
   let browser = null
   try {
-    browser = await puppeteer.launch({ executablePath: BROWSER_PATH })
+    browser = await puppeteer.launch({executablePath: BROWSER_PATH})
 
     const page = await browser.newPage()
-    page.setViewport({ width: 1920, height: 1080 })
+    page.setViewport({width: 1920, height: 1080})
 
     await page.goto('http://scu.ugr.es')
     await page.waitForSelector('.inline')
@@ -18,11 +18,12 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
         return date.replace(/\s/g, '').toLowerCase()
       }
 
-      const includesToday = (trs, today) => {
+      const includesDay = (container, dayStr) => {
+        let trs = container.querySelectorAll('tr')
         for (let i = 0; i < trs.length; i++) {
           let td = trs[i].querySelector('td.leftalign')
           let date = td === null ? null : sanitizeDate(td.textContent)
-          if (date !== null && date.includes(today)) return true
+          if (date !== null && date.includes(dayStr)) return true
         }
         return false
       }
@@ -43,24 +44,36 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
 
       // sunday (0) - saturday (6)
       let dayOfWeek = currentDate.getDay()
-      if (dayOfWeek === 0) { // If sunday, load next week menu (starting monday)
+      if (dayOfWeek === 0) { // If sunday, load next week menu
         currentDate.setDate(currentDate.getDate() + 1)
         dayOfWeek = currentDate.getDay()
       }
-      let dayOfMonth = currentDate.getDate()
-      let today = days[dayOfWeek] + ',' + dayOfMonth
 
-      let containers = document.querySelectorAll('div.content_doku > div')
+      // set date as monday of the current week
+      let diff = currentDate.getDate() - dayOfWeek + 1
+      currentDate.setDate(diff)
+
+      let containers = document.querySelectorAll('div.content_doku > div.level1')
       let container = null
       for (let i = 0; i < containers.length; i++) {
-        let trs = containers[i].querySelectorAll('tr')
-        if (includesToday(trs, today)) {
-          container = containers[i]
-          break
+        let dateAux = new Date()
+        let offset = 0
+        let found = false
+        while (offset !== 7) {
+          dateAux.setDate(currentDate.getDate() + offset)
+          let dayOfMonth = dateAux.getDate()
+          let dayStr = days[dateAux.getDay()] + ',' + dayOfMonth + 'd'
+          if (includesDay(containers[i], dayStr)) {
+            container = containers[i]
+            found = true
+          }
+          if (found) break
+          offset++
         }
+        if (found) break
       }
 
-      // If today not found in any container, just return
+      // If the menu of the current week couldn't be found, just return
       if (container === null) return tables
 
       let trs = container.querySelectorAll('tr')
@@ -73,7 +86,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
         }
       }
 
-      var out = []
+      let out = []
       for (let i = 0; i < dateIdxs.length; i++) {
         let dateIdx = dateIdxs[i]
         let date = sanitizeDate(trs[dateIdx].querySelector('td.leftalign').textContent)
@@ -86,7 +99,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
           outTableBody.append(trs[j])
         }
 
-        out.push({ table: outTable, date: date })
+        out.push({table: outTable, date: date})
       }
 
       // Add all tables to DOM before getting their client rect
@@ -95,7 +108,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       }
 
       for (let i = 0; i < out.length; i++) {
-        const { x, y, width, height } = out[i].table.getBoundingClientRect()
+        const {x, y, width, height} = out[i].table.getBoundingClientRect()
         tables.push({
           rect: {
             left: x,

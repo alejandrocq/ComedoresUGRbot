@@ -24,7 +24,7 @@ subscriptions = []
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
 
 # Get bot token from environment variable BOT_TOKEN
-bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'))
+bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'), threaded=False)
 
 
 @bot.message_handler(commands=['start'])
@@ -117,7 +117,7 @@ def send_menu_image(chat_id, day_of_week):
                 img.close()
                 log.info(file + ' has been sent')
     except Exception as e:
-        log.error('Exception trying to send menu images to chat id '
+        log.error('Exception trying to send menu images to chat id {0}'
                   .format(chat_id), e)
 
 
@@ -144,13 +144,12 @@ def load_data():
 
         subprocess.run(['node', 'renderer.js'], timeout=60)
 
-        # Remove old images only if new images are available
-        if os.listdir(NEW_IMAGES_PATH):
-            for filename in os.listdir(IMAGES_PATH):
-                os.remove(IMAGES_PATH + filename)
-            for filename in os.listdir(NEW_IMAGES_PATH):
-                os.rename(NEW_IMAGES_PATH + filename,
-                          IMAGES_PATH + unidecode(filename))
+        # Remove old images and move new images to images path
+        for filename in os.listdir(IMAGES_PATH):
+            os.remove(IMAGES_PATH + filename)
+        for filename in os.listdir(NEW_IMAGES_PATH):
+            os.rename(NEW_IMAGES_PATH + filename,
+                      IMAGES_PATH + unidecode(filename))
 
         log.info('Menu images have been rendered successfully')
     except Exception as err:
@@ -184,9 +183,15 @@ def persist_subscriptions():
 
 
 def process_subscriptions():
+    week_day_str = unidecode(
+        '{today:%A},{today.day}'.format(today=date.today()))
+
+    target_files = [file for file in os.listdir(IMAGES_PATH)
+                    if file.startswith(week_day_str)]
     for sub in subscriptions:
-        week_day_str = '{today:%A},{today.day}'.format(today=date.today())
-        send_menu_image(sub, unidecode(week_day_str))
+        if target_files:
+            send_menu_image(sub, week_day_str)
+
     schedule_subscription_processing()
 
 

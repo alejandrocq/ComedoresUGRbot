@@ -2,10 +2,11 @@ images/
 images-new/
 node_modules/
 package-lock.json
-*.txt
+subscriptions.txt
 *.bak
 *.pdf
 *.log
 *.sh
 .tern-project
 .eslintrc.json
+.idea/
