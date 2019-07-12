@@ -10,3 +10,4 @@ subscriptions.txt
 .tern-project
 .eslintrc.json
 .idea/
+.vscode/
