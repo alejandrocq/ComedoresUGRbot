@@ -1,16 +1,17 @@
 #!/usr/bin/python3
-import os
-import subprocess
-import threading
-import sys
-import signal
-import logging as log
-import telebot
-import urllib
-import time
-import re
 import locale
+import logging as log
+import os
+import re
+import signal
+import subprocess
+import sys
+import threading
+import time
+import urllib
 from datetime import datetime, date, timedelta
+
+import telebot
 from unidecode import unidecode
 
 IMAGES_PATH = 'images/'
@@ -117,13 +118,13 @@ def send_menu_image(chat_id, day_of_week):
                 img.close()
                 log.info(file + ' has been sent')
     except Exception as e:
-        log.error('Exception trying to send menu images to chat id {0}'
-                  .format(chat_id), e)
+        log.error('Exception trying to send menu images to chat id {}: {}'
+                  .format(str(chat_id), str(e)))
 
 
 def log_command(message):
-    log.info('Received command ' + message.text +
-             '. Chat data: ' + str(message.chat))
+    log.info('Command {} has been received. Chat data: {}'
+             .format(message.text, str(message.chat)))
 
 
 def load_data():
@@ -153,7 +154,7 @@ def load_data():
 
         log.info('Menu images have been rendered successfully')
     except Exception as err:
-        log.error('Renderer error: {0}'.format(err.args))
+        log.error('Renderer error: {0}'.format(str(err)))
 
     # Download menu pdf
     try:
@@ -200,6 +201,7 @@ def schedule_subscription_processing():
     global sub_timer
 
     now = datetime.now()
+    next = now
 
     if now.hour < 12:
         next = now.replace(hour=12, minute=0)

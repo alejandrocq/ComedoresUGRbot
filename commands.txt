@@ -1,0 +1,11 @@
+hoy - Obtener el menú del día actual
+suscripcion - Suscribirse al menú diario
+cancelarsuscripcion - Cancelar suscripción al menú diario
+lunes - Obtener el menú del lunes
+martes - Obtener el menú del martes
+miercoles - Obtener el menú del miércoles
+jueves - Obtener el menú del jueves
+viernes - Obtener el menú del viernes
+sabado - Obtener el menú del sábado
+pdf - Obtener el pdf con el menú semanal
+help - Mostrar un mensaje de ayuda

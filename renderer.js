@@ -5,10 +5,13 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
 (async () => {
   let browser = null
   try {
-    browser = await puppeteer.launch({executablePath: BROWSER_PATH})
+    browser = await puppeteer.launch({
+      executablePath: BROWSER_PATH,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
 
     const page = await browser.newPage()
-    page.setViewport({width: 1920, height: 1080})
+    page.setViewport({width: 1920, height: 1080, deviceScaleFactor: 2})
 
     await page.goto('http://scu.ugr.es')
     await page.waitForSelector('.inline')
@@ -53,7 +56,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       let diff = currentDate.getDate() - dayOfWeek + 1
       currentDate.setDate(diff)
 
-      let containers = document.querySelectorAll('div.content_doku > div.level1')
+      let containers = document.querySelectorAll('div.content_doku > div')
       let container = null
       for (let i = 0; i < containers.length; i++) {
         let dateAux = new Date()
