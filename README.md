@@ -1,7 +1,7 @@
 # ComedoresUGRbot
-<img src="ugrlogo.png" width="256px" align="right"/>
+<img src="doc-images/ugrlogo.png" width="256px" align="right"/>
 
-<img src="telegramlogo.png" width="16px"/> http://telegram.me/ComedoresUGRbot
+<img src="doc-images/telegramlogo.png" width="16px"/> http://telegram.me/ComedoresUGRbot
 
 Telegram bot to check the menu of Universidad de Granada dining hall. It works
 thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/) and [puppeteer](https://github.com/GoogleChrome/puppeteer/).
