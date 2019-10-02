@@ -11,7 +11,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
     })
 
     const page = await browser.newPage()
-    page.setViewport({width: 1920, height: 1080, deviceScaleFactor: 2})
+    page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
 
     await page.goto('http://scu.ugr.es')
     await page.waitForSelector('.inline')
@@ -53,13 +53,13 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       }
 
       // set date as monday of the current week
-      let diff = currentDate.getDate() - dayOfWeek + 1
-      currentDate.setDate(diff)
+      let diff = (dayOfWeek - 1) * 24 * 60 * 60 * 1000
+      currentDate.setTime(currentDate.getTime() - diff)
 
       let containers = document.querySelectorAll('div.content_doku > div')
       let container = null
       for (let i = 0; i < containers.length; i++) {
-        let dateAux = new Date()
+        let dateAux = new Date(currentDate.getTime())
         let offset = 0
         let found = false
         while (offset !== 7) {
@@ -102,7 +102,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
           outTableBody.append(trs[j])
         }
 
-        out.push({table: outTable, date: date})
+        out.push({ table: outTable, date: date })
       }
 
       // Add all tables to DOM before getting their client rect
@@ -111,7 +111,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
       }
 
       for (let i = 0; i < out.length; i++) {
-        const {x, y, width, height} = out[i].table.getBoundingClientRect()
+        const { x, y, width, height } = out[i].table.getBoundingClientRect()
         tables.push({
           rect: {
             left: x,
