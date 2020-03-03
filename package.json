@@ -18,7 +18,7 @@
   "homepage": "https://github.com/alejandrocq/ComedoresUGRbot#readme",
   "dependencies": {
     "eslint": "^5.16.0",
-    "npm": "^5.10.0",
+    "npm": "^6.13.4",
     "puppeteer": "~1.12.0"
   },
   "devDependencies": {
