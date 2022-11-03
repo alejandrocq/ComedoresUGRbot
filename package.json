@@ -19,7 +19,7 @@
   "dependencies": {
     "eslint": "^5.16.0",
     "npm": "^6.13.4",
-    "puppeteer": "~1.19.0"
+    "puppeteer": "~19.2.2"
   },
   "devDependencies": {
     "eslint-config-standard": "^11.0.0",

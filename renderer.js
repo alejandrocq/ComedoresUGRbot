@@ -1,14 +1,9 @@
-const puppeteer = require('puppeteer')
-
-const BROWSER_PATH = process.env.BROWSER_PATH;
+const puppeteer = require('puppeteer');
 
 (async () => {
   let browser = null
   try {
-    browser = await puppeteer.launch({
-      executablePath: BROWSER_PATH,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    })
+    browser = await puppeteer.launch()
 
     const page = await browser.newPage()
     page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
@@ -52,18 +47,20 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
         dayOfWeek = currentDate.getDay()
       }
 
-      // set date as monday of the current week
+      // set current date as monday of the current week
       let diff = (dayOfWeek - 1) * 24 * 60 * 60 * 1000
       currentDate.setTime(currentDate.getTime() - diff)
 
-      let containers = document.querySelectorAll('div.content_doku > div')
+      let containers = document.querySelectorAll('div.content_doku > div.level1')
       let container = null
       for (let i = 0; i < containers.length; i++) {
         let dateAux = new Date(currentDate.getTime())
-        let offset = 0
         let found = false
-        while (offset !== 7) {
-          dateAux.setDate(currentDate.getDate() + offset)
+        
+        // Test all days of the week until we find one of them on the tables
+        let dayOffset = 0
+        while (dayOffset !== 7) {
+          dateAux.setDate(dateAux.getDate() + (dayOffset === 0 ? 0 : 1))
           let dayOfMonth = dateAux.getDate()
           let dayStr = days[dateAux.getDay()] + ',' + dayOfMonth + 'd'
           if (includesDay(containers[i], dayStr)) {
@@ -71,8 +68,9 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
             found = true
           }
           if (found) break
-          offset++
+          dayOffset++
         }
+        
         if (found) break
       }
 
