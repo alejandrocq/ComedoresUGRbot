@@ -159,7 +159,7 @@ def load_data():
     # Download menu pdf
     try:
         f = open(PDF_FILENAME, 'wb')
-        f.write(urllib.request.urlopen('http://scu.ugr.es/?theme=pdf')
+        f.write(urllib.request.urlopen('https://scu.ugr.es/pages/menu/comedor?theme=pdf')
                 .read())
         f.close()
         log.info(PDF_FILENAME + ' downloaded successfully')
