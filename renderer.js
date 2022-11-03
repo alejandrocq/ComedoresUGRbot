@@ -13,7 +13,7 @@ const BROWSER_PATH = process.env.BROWSER_PATH;
     const page = await browser.newPage()
     page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
 
-    await page.goto('http://scu.ugr.es')
+    await page.goto('https://scu.ugr.es/pages/menu/comedor')
     await page.waitForSelector('.inline')
 
     let data = await page.evaluate(() => {
