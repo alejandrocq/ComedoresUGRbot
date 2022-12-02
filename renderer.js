@@ -19,8 +19,8 @@ const puppeteer = require('puppeteer');
       const includesDay = (container, dayStr) => {
         let trs = container.querySelectorAll('tr')
         for (let i = 0; i < trs.length; i++) {
-          let td = trs[i].querySelector('td.leftalign')
-          let date = td === null ? null : sanitizeDate(td.textContent)
+          let th = trs[i].querySelector('th.leftalign')
+          let date = th === null ? null : sanitizeDate(th.textContent)
           if (date !== null && date.includes(dayStr)) return true
         }
         return false
@@ -80,8 +80,8 @@ const puppeteer = require('puppeteer');
       let trs = container.querySelectorAll('tr')
       let dateIdxs = []
       for (let i = 0; i < trs.length; i++) {
-        let td = trs[i].querySelector('td.leftalign')
-        let date = td === null ? null : sanitizeDate(td.textContent)
+        let th = trs[i].querySelector('th.leftalign')
+        let date = th === null ? null : sanitizeDate(th.textContent)
         if (date !== null && days.includes(date.substring(0, date.indexOf(',')))) {
           dateIdxs.push(i)
         }
@@ -90,7 +90,7 @@ const puppeteer = require('puppeteer');
       let out = []
       for (let i = 0; i < dateIdxs.length; i++) {
         let dateIdx = dateIdxs[i]
-        let date = sanitizeDate(trs[dateIdx].querySelector('td.leftalign').textContent)
+        let date = sanitizeDate(trs[dateIdx].querySelector('th.leftalign').textContent)
         let outTable = document.createElement('table')
         let outTableBody = document.createElement('tbody')
         outTable.append(outTableBody)
