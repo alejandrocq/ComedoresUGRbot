@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer');
     const page = await browser.newPage()
     page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
 
-    await page.goto('https://scu.ugr.es/pages/menu/comedor')
+    await page.goto('https://scu.ugr.es')
     await page.waitForSelector('.inline')
 
     let data = await page.evaluate(() => {
@@ -19,7 +19,7 @@ const puppeteer = require('puppeteer');
       const includesDay = (container, dayStr) => {
         let trs = container.querySelectorAll('tr')
         for (let i = 0; i < trs.length; i++) {
-          let th = trs[i].querySelector('th.leftalign')
+          let th = trs[i].querySelector('th.leftalign > strong')
           let date = th === null ? null : sanitizeDate(th.textContent)
           if (date !== null && date.includes(dayStr)) return true
         }
@@ -56,7 +56,7 @@ const puppeteer = require('puppeteer');
       for (let i = 0; i < containers.length; i++) {
         let dateAux = new Date(currentDate.getTime())
         let found = false
-        
+
         // Test all days of the week until we find one of them on the tables
         let dayOffset = 0
         while (dayOffset !== 7) {
@@ -70,7 +70,7 @@ const puppeteer = require('puppeteer');
           if (found) break
           dayOffset++
         }
-        
+
         if (found) break
       }
 
