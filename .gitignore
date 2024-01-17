@@ -2,6 +2,9 @@
 .eslintrc.json
 .idea/
 .vscode/
+venv/
+node_modules/
+package-lock.json
 
 *.txt
 *.bak
@@ -12,6 +15,4 @@
 
 images/
 images-new/
-node_modules/
-package-lock.json
 !requirements.txt

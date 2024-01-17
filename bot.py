@@ -8,36 +8,52 @@ import subprocess
 import sys
 import threading
 import time
-import urllib
+import urllib.request as request
 from datetime import datetime, date, timedelta
 
 import telebot
 from unidecode import unidecode
 
-IMAGES_PATH = 'images/'
-NEW_IMAGES_PATH = 'images-new/'
-PDF_FILENAME = 'menu.pdf'
-
-data_timer = None
-sub_timer = None
-subscriptions = []
-
+log.basicConfig(level=log.INFO,
+                format='%(asctime)s %(levelname)s %(message)s')
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
+
+
+def signal_handler(signal_number, frame):
+    print('Received signal ' + str(signal_number)
+          + '. Trying to end tasks and exit...')
+    bot.stop_polling()
+    data_timer.cancel()
+    sub_timer.cancel()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 # Get bot token from environment variable BOT_TOKEN
 bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'), threaded=False)
 
+IMAGES_PATH = 'images/'
+NEW_IMAGES_PATH = 'images-new/'
+PDF_FILENAME = 'menu.pdf'
+
+data_timer: threading.Timer
+sub_timer: threading.Timer
+subscriptions = []
+
 
 @bot.message_handler(commands=['start'])
 def welcome_message(message):
-    msg = "¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el menú semanal en pdf usando /pdf o suscribirte al menú diario usando /suscripcion . Si necesitas ayuda, usa /help."
+    msg = ("¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el "
+           "menú semanal en pdf usando /pdf o suscribirte al menú diario usando /suscripcion . Si necesitas ayuda, usa /help.")
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    msg = "Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf con el menú semanal completo o suscribirte al menú diario usando /suscripcion"
+    msg = ("Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf "
+           "con el menú semanal completo o suscribirte al menú diario usando /suscripcion")
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
@@ -46,7 +62,7 @@ def help_message(message):
                                'viernes', 'sabado'])
 def send_menu(message):
     # Parse command correctly (avoid content after @)
-    regex = re.compile('\/\w*')
+    regex = re.compile(r'/\w*')
     command = regex.search(message.text).group(0)
     log_command(message)
     send_menu_image(message.chat.id, command.replace("/", ""))
@@ -56,7 +72,8 @@ def send_menu(message):
 def send_menu_today(message):
     log_command(message)
 
-    suggest_subscription_msg = '*NOVEDAD*: Ahora puedes suscribirte y *recibir el menú diario automáticamente*. Para ello, utiliza el comando /suscripcion'
+    suggest_subscription_msg = ('*NOTA*: Recuerda que puedes *suscribirte y recibir el menú diario automáticamente*. Para ello, utiliza el comando '
+                                '/suscripcion')
     bot.send_message(message.chat.id, suggest_subscription_msg,
                      parse_mode='markdown')
 
@@ -80,7 +97,8 @@ def subscribe(message):
     log_command(message)
 
     if message.chat.id in subscriptions:
-        msg = 'Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
+        msg = ('Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando '
+               '/cancelarsuscripcion')
         bot.send_message(message.chat.id, msg, parse_mode='markdown')
         return
 
@@ -108,7 +126,8 @@ def send_menu_image(chat_id, day_of_week):
         target_files = [file for file in os.listdir(IMAGES_PATH)
                         if file.startswith(day_of_week)]
         if not target_files:
-            msg = "No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta http://scu.ugr.es para más información."
+            msg = ("No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta "
+                   "https://scu.ugr.es para más información.")
             bot.send_message(chat_id, msg)
             log.info('No data available for requested day')
         else:
@@ -159,7 +178,7 @@ def load_data():
     # Download menu pdf
     try:
         f = open(PDF_FILENAME, 'wb')
-        f.write(urllib.request.urlopen('https://scu.ugr.es/pages/menu/comedor?theme=pdf')
+        f.write(request.urlopen('https://scu.ugr.es/pages/menu/comedor?theme=pdf')
                 .read())
         f.close()
         log.info(PDF_FILENAME + ' downloaded successfully')
@@ -201,33 +220,29 @@ def schedule_subscription_processing():
     global sub_timer
 
     now = datetime.now()
-    next = now
+    next_sub_target = now
 
     if now.hour < 12:
-        next = now.replace(hour=12, minute=0)
+        next_sub_target = now.replace(hour=12, minute=0)
     elif now.hour >= 12:
-        next = now + timedelta(days=1)
-        next = next.replace(hour=12, minute=0)
+        next_sub_target = now + timedelta(days=1)
+        next_sub_target = next_sub_target.replace(hour=12, minute=0)
 
-    if next.weekday() == 6:
+    if next_sub_target.weekday() == 6:
         # Dining hall closed on sundays, so schedule to next monday
-        next = next + timedelta(days=1)
+        next_sub_target = next_sub_target + timedelta(days=1)
 
-    delta = next.timestamp() - now.timestamp()
+    delta = next_sub_target.timestamp() - now.timestamp()
     log.info('Subscriptions processing delta: ' + str(delta / 3600) + ' hours')
     sub_timer = threading.Timer(delta, process_subscriptions)
     sub_timer.start()
 
 
-def main():
-    log.basicConfig(level=log.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s')
+if __name__ == "__main__":
 
     load_data()
     load_subscriptions()
     schedule_subscription_processing()
-
-    signal.signal(signal.SIGINT, signal_handler)
 
     while True:
         try:
@@ -237,16 +252,3 @@ def main():
             log.error("Bot polling error: {0}".format(err.args))
             bot.stop_polling()
             time.sleep(30)
-
-
-def signal_handler(signal_number, frame):
-    print('Received signal ' + str(signal_number)
-          + '. Trying to end tasks and exit...')
-    bot.stop_polling()
-    data_timer.cancel()
-    sub_timer.cancel()
-    sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()
