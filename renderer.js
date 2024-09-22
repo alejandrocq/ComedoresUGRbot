@@ -8,7 +8,7 @@ const puppeteer = require('puppeteer');
     const page = await browser.newPage()
     page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
 
-    await page.goto('https://scu.ugr.es')
+    await page.goto(process.env.COMEDORES_URL)
     await page.waitForSelector('.inline')
 
     let data = await page.evaluate(() => {
