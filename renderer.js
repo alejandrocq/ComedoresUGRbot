@@ -6,7 +6,7 @@ const puppeteer = require('puppeteer');
     browser = await puppeteer.launch()
 
     const page = await browser.newPage()
-    page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
+    await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
 
     await page.goto(process.env.COMEDORES_URL)
     await page.waitForSelector('.inline')
