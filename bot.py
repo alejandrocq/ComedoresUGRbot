@@ -14,6 +14,8 @@ from datetime import datetime, date, timedelta
 import telebot
 from unidecode import unidecode
 
+from messages import messages_es_ES
+
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s %(levelname)s %(message)s')
 locale.setlocale(locale.LC_ALL, 'es_ES.utf8')
@@ -44,16 +46,14 @@ subscriptions = []
 
 @bot.message_handler(commands=['start'])
 def welcome_message(message):
-    msg = ("¡Ya estamos listos para empezar! Escribe /lunes , /martes , ... o /hoy para obtener el menú correspondiente. También puedes obtener el "
-           "menú semanal en pdf usando /pdf o suscribirte al menú diario usando /suscripcion . Si necesitas ayuda, usa /help.")
+    msg = messages_es_ES['welcome_message']
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
-    msg = ("Si deseas obtener el menú de un día concreto, usa /lunes, /martes... o /hoy . Además, escribiendo /pdf puedes obtener el documento pdf "
-           "con el menú semanal completo o suscribirte al menú diario usando /suscripcion")
+    msg = messages_es_ES['help_message']
     log_command(message)
     bot.send_message(message.chat.id, msg)
 
@@ -72,8 +72,7 @@ def send_menu(message):
 def send_menu_today(message):
     log_command(message)
 
-    suggest_subscription_msg = ('*NOTA*: Recuerda que puedes *suscribirte y recibir el menú diario automáticamente*. Para ello, utiliza el comando '
-                                '/suscripcion')
+    suggest_subscription_msg = messages_es_ES['suggest_subscription_msg']
     bot.send_message(message.chat.id, suggest_subscription_msg,
                      parse_mode='markdown')
 
@@ -97,15 +96,14 @@ def subscribe(message):
     log_command(message)
 
     if message.chat.id in subscriptions:
-        msg = ('Ya estás suscrito. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando '
-               '/cancelarsuscripcion')
+        msg = messages_es_ES['already_subscribed']
         bot.send_message(message.chat.id, msg, parse_mode='markdown')
         return
 
     subscriptions.append(message.chat.id)
     persist_subscriptions()
 
-    msg = '¡Suscrito con éxito!. Recibirás el menú cada día a las *12:00 (hora española)*. Puedes cancelar la suscripcion usando /cancelarsuscripcion'
+    msg = messages_es_ES['subscribed_success']
     bot.send_message(message.chat.id, msg, parse_mode='markdown')
 
 
@@ -117,7 +115,7 @@ def unsubscribe(message):
         subscriptions.remove(message.chat.id)
         persist_subscriptions()
 
-    msg = '¡Suscripción cancelada!. Puedes volver a suscribirte en cualquier momento usando el comando /suscripcion'
+    msg = messages_es_ES['unsubscribed_success']
     bot.send_message(message.chat.id, msg)
 
 
@@ -126,8 +124,7 @@ def send_menu_image(chat_id, day_of_week):
         target_files = [file for file in os.listdir(IMAGES_PATH)
                         if file.startswith(day_of_week)]
         if not target_files:
-            msg = ("No hay ningún menú disponible para el día indicado. Es posible que el comedor esté cerrado o que no haya datos aún. Consulta "
-                   "https://scu.ugr.es para más información.")
+            msg = messages_es_ES['no_menu_available']
             bot.send_message(chat_id, msg)
             log.info('No data available for requested day')
         else:
