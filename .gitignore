@@ -14,4 +14,10 @@ node_modules/
 
 images/
 images-new/
+data/
 !requirements.txt
+
+# Environment variables (sensitive data)
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,29 @@
+services:
+  comedoresugrbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comedoresugrbot
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./data:/app/data
+
+    security_opt:
+      - no-new-privileges:true
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "python.*bot.py"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 30s

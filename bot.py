@@ -35,9 +35,11 @@ signal.signal(signal.SIGINT, signal_handler)
 # Get bot token from environment variable BOT_TOKEN
 bot = telebot.TeleBot(os.environ.get('BOT_TOKEN'), threaded=False)
 
-IMAGES_PATH = 'images/'
-NEW_IMAGES_PATH = 'images-new/'
-PDF_FILENAME = 'menu.pdf'
+DATA_PATH = 'data/'
+IMAGES_PATH = DATA_PATH + 'images/'
+NEW_IMAGES_PATH = DATA_PATH + 'images-new/'
+PDF_FILENAME = DATA_PATH + 'menu.pdf'
+SUBSCRIPTIONS_FILE = DATA_PATH + 'subscriptions.txt'
 
 data_timer: threading.Timer
 sub_timer: threading.Timer
@@ -186,14 +188,16 @@ def load_data():
 
 def load_subscriptions():
     global subscriptions
-    if os.path.exists('subscriptions.txt'):
-        file = open('subscriptions.txt', 'r')
+    if os.path.exists(SUBSCRIPTIONS_FILE):
+        file = open(SUBSCRIPTIONS_FILE, 'r')
         for sub in file.readlines():
             subscriptions.append(int(sub.replace('\n', '')))
 
 
 def persist_subscriptions():
-    file = open('subscriptions.txt', 'w')
+    if not os.path.exists(DATA_PATH):
+        os.makedirs(DATA_PATH)
+    file = open(SUBSCRIPTIONS_FILE, 'w')
     for sub in subscriptions:
         file.write(str(sub) + '\n')
     file.close()

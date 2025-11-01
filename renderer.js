@@ -3,7 +3,14 @@ const puppeteer = require('puppeteer');
 (async () => {
   let browser = null
   try {
-    browser = await puppeteer.launch()
+    browser = await puppeteer.launch({
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
+    })
 
     const page = await browser.newPage()
     await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 2 })
@@ -134,7 +141,7 @@ const puppeteer = require('puppeteer');
 
       if (tableDate === null) continue
 
-      let imagePath = 'images-new/' + tableDate + '.png'
+      let imagePath = 'data/images-new/' + tableDate + '.png'
       screenshots.push(page.screenshot({
         path: imagePath,
         clip: {

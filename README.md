@@ -10,26 +10,92 @@ thanks to [pyTelegramBotAPI](https://github.com/eternnoir/pyTelegramBotAPI/) and
 
 ## Installation
 
-First of all, **you need Python 3 correctly installed on your machine**. Then, run:
+### Option 1: Docker (Recommended)
 
-> pip install -r requirements.txt
+The easiest way to run the bot is using Docker. This handles all dependencies automatically:
 
-**In some environments, you have to use pip3 instead of pip** in order to install the packages for Python 3.
+1. Create a `.env` file from the example:
+   ```bash
+   cp .env.example .env
+   ```
 
-Also, you need to **install all the necessary node dependencies to run the renderer**. To do that, run:
+2. Edit `.env` and add your bot token and the UGR dining hall URL:
+   ```bash
+   BOT_TOKEN=your_bot_token_here
+   COMEDORES_URL=https://scu.ugr.es/pages/menu/comedor
+   ```
 
-> npm install
+3. Create the data directory:
+   ```bash
+   mkdir -p data
+   ```
 
-In order to test the renderer, run the following command and be sure that all menu tables are being saved in `./images-new` folder:
+4. Start the bot:
+   ```bash
+   docker-compose up -d
+   ```
 
-> node renderer.js
+**Useful commands:**
+- View logs: `docker-compose logs -f`
+- Stop bot: `docker-compose down`
+- Restart bot: `docker-compose restart`
+- Rebuild after changes: `docker-compose up -d --build`
 
-Once you have installed all the dependencies, add your bot token in `BOT_TOKEN` environment variable. Optionally, you can configure a custom chromium browser path in `BROWSER_PATH` environment variable if you don't want to use the chromium browser bundled with puppeteer npm package.
+### Option 2: Manual Installation
 
-When everything is properly configured, run the bot script:
+First of all, **you need Python 3 correctly installed on your machine**.
 
-> python3 ComedoresUGRbot.py
+1. **Create and activate a virtual environment:**
+
+   ```bash
+   # Create virtual environment
+   python3 -m venv venv
+
+   # Activate it (Linux/macOS)
+   source venv/bin/activate
+   ```
+
+2. **Install Python dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Install Node.js dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+4. **Test the renderer** (optional):
+
+   ```bash
+   node renderer.js
+   ```
+
+   Verify that menu tables are being saved in `./images-new` folder.
+
+5. **Configure environment variables:**
+
+   Create a `.env` file:
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit it with your configuration:
+   ```bash
+   BOT_TOKEN=your_bot_token_here
+   COMEDORES_URL=https://scu.ugr.es/pages/menu/comedor
+   ```
+
+6. **Run the bot:**
+
+   ```bash
+   python3 bot.py
+   ```
 
 All should work okay. **Menu images are updated every hour**.
+
+## License
 
 Code licensed under GPLv3. See LICENSE file for more information.
