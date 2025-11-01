@@ -33,11 +33,10 @@ COPY renderer.js .
 
 RUN mkdir -p data/images data/images-new
 
-# Create a non-root user to run the application
-RUN useradd -m -u 1000 botuser && \
-    chown -R botuser:botuser /app
+# Use the existing node user from the base image
+RUN chown -R node:node /app
 
-USER botuser
+USER node
 
 # Configure Puppeteer to use system Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
