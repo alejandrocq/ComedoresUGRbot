@@ -85,7 +85,7 @@ First of all, **you need Python 3 correctly installed on your machine**.
    Edit it with your configuration:
    ```bash
    BOT_TOKEN=your_bot_token_here
-   COMEDORES_URL=https://scu.ugr.es/pages/menu/comedor
+   COMEDORES_URL=https://scu.ugr.es/
    ```
 
 6. **Run the bot:**
