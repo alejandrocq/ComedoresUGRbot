@@ -17,12 +17,12 @@
   },
   "homepage": "https://github.com/alejandrocq/ComedoresUGRbot#readme",
   "dependencies": {
-    "npm": "^11.4.2",
-    "puppeteer": "~24.10.1"
+    "npm": "^11.6.2",
+    "puppeteer": "^24.27.0"
   },
   "devDependencies": {
-    "eslint": "^9.29.0",
-    "eslint-plugin-import": "^2.31.0",
+    "eslint": "^9.39.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.2.1"
   }
