@@ -16,6 +16,10 @@ ENV LANG es_ES.UTF-8
 ENV LANGUAGE es_ES:es
 ENV LC_ALL es_ES.UTF-8
 
+# Set Spanish timezone
+ENV TZ=Europe/Madrid
+RUN ln -sf /usr/share/zoneinfo/Europe/Madrid /etc/localtime
+
 WORKDIR /app
 
 COPY requirements.txt .
