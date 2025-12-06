@@ -4,4 +4,4 @@ idna==3.11
 pyTelegramBotAPI==4.29.1
 requests==2.32.5
 Unidecode==1.4.0
-urllib3==2.5.0
+urllib3==2.6.0
