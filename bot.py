@@ -97,12 +97,12 @@ def send_pdf(message):
 def subscribe(message):
     log_command(message)
 
-    if message.chat.id in subscriptions:
+    if any(s['chat_id'] == message.chat.id for s in subscriptions):
         msg = messages_es_ES['already_subscribed']
         bot.send_message(message.chat.id, msg, parse_mode='markdown')
         return
 
-    subscriptions.append(message.chat.id)
+    subscriptions.append({'chat_id': message.chat.id, 'attempts': 0})
     persist_subscriptions()
 
     msg = messages_es_ES['subscribed_success']
@@ -113,8 +113,13 @@ def subscribe(message):
 def unsubscribe(message):
     log_command(message)
 
-    if message.chat.id in subscriptions:
-        subscriptions.remove(message.chat.id)
+    found = False
+    for sub in subscriptions:
+        if sub['chat_id'] == message.chat.id:
+            subscriptions.remove(sub)
+            found = True
+            break
+    if found:
         persist_subscriptions()
 
     msg = messages_es_ES['unsubscribed_success']
@@ -122,22 +127,18 @@ def unsubscribe(message):
 
 
 def send_menu_image(chat_id, day_of_week):
-    try:
-        target_files = [file for file in os.listdir(IMAGES_PATH)
-                        if file.startswith(day_of_week)]
-        if not target_files:
-            msg = messages_es_ES['no_menu_available']
-            bot.send_message(chat_id, msg)
-            log.info('No data available for requested day')
-        else:
-            for file in target_files:
-                img = open(IMAGES_PATH + file, 'rb')
-                bot.send_photo(chat_id, img)
-                img.close()
-                log.info(file + ' has been sent')
-    except Exception as e:
-        log.error('Exception trying to send menu images to chat id {}: {}'
-                  .format(str(chat_id), str(e)))
+    target_files = [file for file in os.listdir(IMAGES_PATH)
+                    if file.startswith(day_of_week)]
+    if not target_files:
+        msg = messages_es_ES['no_menu_available']
+        bot.send_message(chat_id, msg)
+        log.info('No data available for requested day')
+    else:
+        for file in target_files:
+            img = open(IMAGES_PATH + file, 'rb')
+            bot.send_photo(chat_id, img)
+            img.close()
+            log.info(file + ' has been sent')
 
 
 def log_command(message):
@@ -190,8 +191,14 @@ def load_subscriptions():
     global subscriptions
     if os.path.exists(SUBSCRIPTIONS_FILE):
         file = open(SUBSCRIPTIONS_FILE, 'r')
-        for sub in file.readlines():
-            subscriptions.append(int(sub.replace('\n', '')))
+        for line in file:
+            line = line.strip()
+            if line:
+                parts = line.split(':')
+                chat_id = int(parts[0])
+                attempts = int(parts[1]) if len(parts) > 1 else 0
+                subscriptions.append({'chat_id': chat_id, 'attempts': attempts})
+        file.close()
 
 
 def persist_subscriptions():
@@ -199,7 +206,7 @@ def persist_subscriptions():
         os.makedirs(DATA_PATH)
     file = open(SUBSCRIPTIONS_FILE, 'w')
     for sub in subscriptions:
-        file.write(str(sub) + '\n')
+        file.write(f"{sub['chat_id']}:{sub['attempts']}\n")
     file.close()
 
 
@@ -209,9 +216,23 @@ def process_subscriptions():
 
     target_files = [file for file in os.listdir(IMAGES_PATH)
                     if file.startswith(week_day_str)]
+    failed_subs = []
     for sub in subscriptions:
-        if target_files:
-            send_menu_image(sub, week_day_str)
+        try:
+            if target_files:
+                send_menu_image(sub['chat_id'], week_day_str)
+            sub['attempts'] = 0
+        except Exception as e:
+            log.error('Failed to send to chat id {}: {}'.format(sub['chat_id'], e))
+            sub['attempts'] += 1
+            if sub['attempts'] >= 3:
+                failed_subs.append(sub)
+
+    for sub in failed_subs:
+        subscriptions.remove(sub)
+
+    if failed_subs:
+        persist_subscriptions()
 
     schedule_subscription_processing()
 
